@@ -44,7 +44,7 @@ def initialize_model(n_channels, device, use_lora, lora_rank, learning_rate):
                     act_mode='R', downsample_mode="strideconv", upsample_mode="convtranspose").to(device)
     
     get_weights()
-    model.load_state_dict(torch.load('weights/drunet_color.pth'))
+    model.load_state_dict(torch.load('weights/drunet_color.pth'), strict=False)
     
     if use_lora:
         print(f'Using LORA with rank {lora_rank}')
