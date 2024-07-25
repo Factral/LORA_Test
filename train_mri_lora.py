@@ -15,7 +15,7 @@ from load_mri import load_dataset
 from torchvision import transforms
 from torch.utils.data import Dataset
 
-def add_gaussian_noise(img, mean=0.0, std=1.5):
+def add_gaussian_noise(img, mean=0.1, std=0.5):
     noise = torch.randn_like(img) * std + mean
     noisy_img = img + noise
     return torch.clamp(noisy_img, 0., 1.)
