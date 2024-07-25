@@ -6,6 +6,40 @@ from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 from torchvision import transforms, datasets
 import torchvision.utils as vutils
 
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib
+import matplotlib.pyplot
+import random
+
+def new_fig():
+    """Create a new matplotlib figure containing one axis"""
+    fig = Figure()
+    FigureCanvas(fig)
+    axes = []
+
+    axes.append(fig.add_subplot(131))
+    axes.append(fig.add_subplot(132))
+    axes.append(fig.add_subplot(133))
+
+    return fig, axes
+
+def make_plot_val(inputs, outputs, labels):
+    fig, ax = new_fig()
+
+    idx = random.randint(0, inputs.shape[0]-1)
+
+    input_ = inputs[idx].cpu().numpy().transpose(1,2,0)
+    input_ = (input_ - input_.min()) / (input_.max() - input_.min())
+
+    ax[0].imshow(input_)
+    ax[0].set_title("Input")
+
+    ax[1].imshow(outputs[idx].cpu().numpy().squeeze(),)
+    ax[1].set_title("Ground Truth")
+
+
+    return fig
 
 
 def get_weights():
@@ -159,7 +193,6 @@ def get_dataloader(batch_size:int, num_workers:int, data_path:str, im_size: tupl
 def save_reconstructed_images(input_img, imgs, recons, num_img, pad, path, name, PSNR, SSIM):
 
     grid = vutils.make_grid(torch.cat((input_img[:num_img] , imgs[:num_img], recons[:num_img])), nrow=num_img, padding=pad, normalize=True)
-    vutils.save_image(grid, f'{path}/{name}.png')
 
     psnr_imgs = [np.round(PSNR(recons[i].unsqueeze(0), imgs[i].unsqueeze(0)).item(),2) for i in range(num_img)]
     ssim_imgs = [np.round(SSIM(recons[i].unsqueeze(0), imgs[i].unsqueeze(0)).item(),3) for i in range(num_img)]
