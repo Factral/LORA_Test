@@ -205,7 +205,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--lr', type=float, default='1e-3')
     parser.add_argument('--epochs', type=int, default='20')
-    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--save_path', type=str, default='weights/')
     parser.add_argument('--rank', type=int, default=4)
     parser.add_argument('--seed', type=int, default=3407)
