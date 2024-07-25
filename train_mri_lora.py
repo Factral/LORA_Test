@@ -13,7 +13,7 @@ from torchsummary import summary
 from pathlib import Path
 from load_mri import load_dataset
 from torchvision import transforms
-
+from torch.utils.data import Dataset
 
 def add_gaussian_noise(img, mean=0.0, std=1.5):
     noise = torch.randn_like(img) * std + mean
@@ -21,15 +21,36 @@ def add_gaussian_noise(img, mean=0.0, std=1.5):
     return torch.clamp(noisy_img, 0., 1.)
 
 
+class NoisyDataset(Dataset):
+    def __init__(self, dataset, transform=None, noise_transform=None):
+        self.dataset = dataset
+        self.transform = transform
+        self.noise_transform = noise_transform
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        img = self.dataset[idx]
+        if self.transform:
+            img = self.transform(img)
+        clean_img = img.clone()
+        if self.noise_transform:
+            noisy_img = self.noise_transform(img)
+        return clean_img, noisy_img
+
+
 def get_dataloader_with_noise(batch_size, img_size, data_dir, dataset_name, train=True, mean=0.0, std=1.0):
     transform = transforms.Compose([
-        transforms.Resize(img_size),
+        transforms.Resize(img_size)
+    ])
+    
+    noise_transform = transforms.Compose([
         transforms.Lambda(lambda img: add_gaussian_noise(img, mean, std))
     ])
-
-    dataset = load_dataset(
-        dataset_name, data_dir, transform, train=train
-    )
+    
+    base_dataset = load_dataset(dataset_name, data_dir, transform, train=train)
+    dataset = NoisyDataset(base_dataset, transform=transform, noise_transform=noise_transform)
 
     dataloader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=train, num_workers=4, pin_memory=True
@@ -38,13 +59,21 @@ def get_dataloader_with_noise(batch_size, img_size, data_dir, dataset_name, trai
     return dataloader
 
 
+
 def initialize_model(n_channels, device, use_lora, lora_rank, learning_rate):
     
     model = UNetRes(in_nc=n_channels, out_nc=n_channels, nc=[64, 128, 256, 512], nb=4, 
                     act_mode='R', downsample_mode="strideconv", upsample_mode="convtranspose").to(device)
     
+    print(summary(model, (2, 128, 128)))
+
     get_weights()
-    model.load_state_dict(torch.load('weights/drunet_color.pth'), strict=False)
+    dict_weights = torch.load('weights/drunet_color.pth')
+
+    del dict_weights["m_head.weight"]
+    del dict_weights["m_tail.weight"]
+
+    model.load_state_dict(dict_weights, strict=False)
     
     if use_lora:
         print(f'Using LORA with rank {lora_rank}')
@@ -63,9 +92,6 @@ def main(args):
 
 
     args.save_path = args.save_path + path_name
-    if os.path.exists(args.save_path):
-        print("Experiment already done")
-        exit() 
 
     torch.manual_seed(args.seed)
 
@@ -83,7 +109,7 @@ def main(args):
 
 
     model, optimizer = initialize_model(2, device, args.lora, args.rank, args.lr)
-    print(summary(model, (2, 128, 128)))
+
 
     criterion = nn.MSELoss()
 
@@ -110,7 +136,7 @@ def main(args):
         val_psnr = AverageMeter()
 
         data_loop_train = tqdm(trainloader, colour='red')
-        for _, train_data in data_loop_train:
+        for train_data in data_loop_train:
 
             clean, noisy = train_data
             clean, noisy = clean.to(device), noisy.to(device)
