@@ -59,7 +59,7 @@ def initialize_model(n_channels, device, use_lora, lora_rank, learning_rate):
 
 
 def main(args):
-    path_name = f'{args.experiment_number}_lr_{args.lr}_b_{args.batch_size}_e_{args.epochs}_r_{args.rank}_lora_{args.lora}'
+    path_name = f'{args.experiment_name}_lr_{args.lr}_b_{args.batch_size}_e_{args.epochs}_r_{args.rank}_lora_{args.lora}'
 
 
     args.save_path = args.save_path + path_name
@@ -184,6 +184,7 @@ if __name__ == '__main__':
     parser.add_argument('--rank', type=int, default=4)
     parser.add_argument('--seed', type=int, default=3407)
     parser.add_argument('--lora', default=False, action=argparse.BooleanOptionalAction, help='train with lora')
+    parser.add_argument('--experiment_name', type=str, default='lora_mri1')
  
     args = parser.parse_args()
 
