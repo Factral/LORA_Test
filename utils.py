@@ -193,11 +193,11 @@ def get_dataloader(batch_size:int, num_workers:int, data_path:str, im_size: tupl
 def save_reconstructed_images(input_img, imgs, recons, num_img, pad, path, name, PSNR, SSIM):
 
     # normalize between 0 and 1
-    recons = recons.pow(2).sum(0).sqrt()
-    imgs = imgs.pow(2).sum(0).sqrt()
-    input_img = input_img.pow(2).sum(0).sqrt()
+    recons_vis = recons.pow(2).sum(0).sqrt()
+    imgs_vis = imgs.pow(2).sum(0).sqrt()
+    input_img_vis = input_img.pow(2).sum(0).sqrt()
 
-    grid = vutils.make_grid(torch.cat((input_img[:num_img] ,  recons[:num_img], imgs[:num_img],)), nrow=num_img, padding=pad, normalize=True)
+    grid = vutils.make_grid(torch.cat((input_img_vis[:num_img] ,  recons_vis[:num_img], imgs_vis[:num_img],)), nrow=num_img, padding=pad, normalize=True)
 
     psnr_imgs = [np.round(PSNR(recons[i].unsqueeze(0), imgs[i].unsqueeze(0)).item(),2) for i in range(num_img)]
     ssim_imgs = [np.round(SSIM(recons[i].unsqueeze(0), imgs[i].unsqueeze(0)).item(),3) for i in range(num_img)]
